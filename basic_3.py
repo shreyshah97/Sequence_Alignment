@@ -94,7 +94,12 @@ def calculate_cost(generated_strings):
     string1, string2 = generated_strings
     string1_len = len(string1)
     string2_len = len(string2)
+<<<<<<< HEAD
     dp = [[0] * (string2_len+1) for _ in range(0, string1_len+1)]
+=======
+    dict = {"A":0, "C":1, "G":2, "T":3}
+    dp = [[0] * (string1_len+1) for _ in range(0, string2_len+1)]
+>>>>>>> 3233ddc (Code refactoring)
 
     for i in range(1, string1_len+1):
         dp[i][0] = i * DELTA
@@ -108,13 +113,21 @@ def calculate_cost(generated_strings):
                 dp[i-1][j-1] + ALPHA[dict[string1[i-1]]][dict[string2[j-1]]], 
                 DELTA + dp[i-1][j],
                 DELTA + dp[i][j-1])
+<<<<<<< HEAD
     return dp
 
+=======
+
+    print(dp[string1_len][string2_len])
+    return dp
+
+>>>>>>> 3233ddc (Code refactoring)
 def calculate_alignment(generated_strings, dp):
     """
     Returns the aligned string for string1 and string2
     """
     string1, string2 = generated_strings
+<<<<<<< HEAD
     i = len(string1)
     j = len(string2)
     aligned_string_1 = ""
@@ -180,6 +193,29 @@ def driver():
 
 def main():
     time_wrapper(driver)
+=======
+    string1_len = len(string1)
+    string2_len = len(string2)
+    dict = {"A":0, "C":1, "G":2, "T":3}
+    alignment_string_1 = ""
+    alignment_string_1 = ""
+    for i in range(1, string1_len + 1):
+        for j in range(1, string2_len + 1):
+            break
+    return
+
+def main():
+    input_file_path = sys.argv[1] 
+    output_file_path = sys.argv[2]
+    initialize_variables()
+    lines = read_file(input_file_path)
+    generated_strings, base_lengths, operation_counts = generate_strings(lines)
+    validate_strings(generated_strings, base_lengths, operation_counts)
+    print(generated_strings[0]+"\n"+generated_strings[1])
+    dp = calculate_cost(generated_strings)
+    # calculate_alignment(generated_strings, dp)
+    return
+>>>>>>> 3233ddc (Code refactoring)
 
 if __name__ == "__main__":
     main()
