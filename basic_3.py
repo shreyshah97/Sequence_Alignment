@@ -1,5 +1,22 @@
 from ctypes import alignment
 import sys
+import time
+import psutil
+
+def process_memory():
+    process = psutil.Process()
+    memory_info = process.memory_info()
+    memory_consumed = int(memory_info.rss/1024)
+    print(memory_consumed)
+    return memory_consumed
+
+def time_wrapper(driver_func):
+    start_time = time.time()
+    driver_func()
+    end_time = time.time()
+    time_taken = (end_time - start_time)*1000
+    print(time_taken)
+    return time_taken
 
 def read_file(input_file):
     """
@@ -87,17 +104,58 @@ def calculate_alignment(generated_strings, dp):
     Returns the aligned string for string1 and string2
     """
     string1, string2 = generated_strings
-    string1_len = len(string1)
-    string2_len = len(string2)
+    i = len(string1)
+    j = len(string2)
     dict = {"A":0, "C":1, "G":2, "T":3}
-    alignment_string_1 = ""
-    alignment_string_1 = ""
-    for i in range(1, string1_len + 1):
-        for j in range(1, string2_len + 1):
-            break
-    return
+    aligned_string_1 = ""
+    aligned_string_2 = ""
+    
+    while i!=0 and j!=0:
+        if(dp[i][j] == dp[i-1][j-1] + ALPHA[dict[string1[i-1]]][dict[string2[j-1]]]):
+            aligned_string_1 = string1[i-1] + aligned_string_1
+            aligned_string_2 = string2[j-1] + aligned_string_2
+            i-=1
+            j-=1
+        elif(dp[i][j] == DELTA + dp[i][j-1]):
+            aligned_string_1 = "_" + aligned_string_1
+            aligned_string_2 = string2[j-1] + aligned_string_2
+            j-=1
+        else:
+            aligned_string_1 = string1[i-1] + aligned_string_1
+            aligned_string_2 = "_" + aligned_string_2
+            i-=1
+    
+    while i!=0:
+        aligned_string_1 = string1[i-1] + aligned_string_1
+        aligned_string_2 = "_" + aligned_string_2
+        i-=1
+    
+    while j!=0:
+        aligned_string_1 = "_" + aligned_string_1
+        aligned_string_2 = string2[j-1] + aligned_string_2
+        j-=1
 
-def main():
+    return [aligned_string_1, aligned_string_2]
+
+def verify_cost(aligned_strings, dp):
+    aligned_string_1, aligned_string_2 = aligned_strings
+    aligned_string_len = len(aligned_string_1)
+    cost=0
+    dict = {"A":0, "C":1, "G":2, "T":3}
+
+    for i in range(aligned_string_len):
+        if(aligned_string_1[i] == '_' or aligned_string_2[i] == '_'):
+            cost += DELTA
+        else:
+            cost += ALPHA[dict[aligned_string_1[i]]][dict[aligned_string_2[i]]]
+    
+    if dp[-1][-1] != cost:
+        print("Minimum cost calculated does not match with the aligned sequence costs")
+        return -1
+    return cost
+
+
+def driver():
     input_file_path = sys.argv[1] 
     output_file_path = sys.argv[2]
     initialize_variables()
@@ -106,8 +164,14 @@ def main():
     validate_strings(generated_strings, base_lengths, operation_counts)
     print(generated_strings[0]+"\n"+generated_strings[1])
     dp = calculate_cost(generated_strings)
-    # calculate_alignment(generated_strings, dp)
+    aligned_strings = calculate_alignment(generated_strings, dp)
+    print(aligned_strings[0]+"\n"+aligned_strings[1])
+    verify_cost(aligned_strings, dp)
     return
+
+def main():
+    time_wrapper(driver)
+    process_memory()
 
 if __name__ == "__main__":
     main()
