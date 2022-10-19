@@ -16,6 +16,7 @@ def time_wrapper(driver_func):
     end_time = time.time()
     time_taken = (end_time - start_time)*1000
     print(time_taken)
+    process_memory()
     return time_taken
 
 def read_file(input_file):
@@ -171,7 +172,6 @@ def driver():
 
 def main():
     time_wrapper(driver)
-    process_memory()
 
 if __name__ == "__main__":
     main()
