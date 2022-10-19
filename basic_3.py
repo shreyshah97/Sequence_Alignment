@@ -28,8 +28,13 @@ def time_wrapper(driver_func):
     data = driver_func()
     end_time = time.time()
     time_taken = (end_time - start_time)*1000
+<<<<<<< HEAD
     memory_consumed= process_memory()
     updateMetrics(data[0], memory_consumed, time_taken, data[1], data[2])
+=======
+    print(time_taken)
+    process_memory()
+>>>>>>> 31613d1 (Change the location of memory calculate call)
     return time_taken
 
 def read_file(input_file):
@@ -255,7 +260,6 @@ def driver():
 
 def main():
     time_wrapper(driver)
-    process_memory()
 
 if __name__ == "__main__":
     main()
