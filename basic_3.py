@@ -82,7 +82,7 @@ def calculate_cost(generated_strings):
     string1_len = len(string1)
     string2_len = len(string2)
     dict = {"A":0, "C":1, "G":2, "T":3}
-    dp = [[0] * (string1_len+1) for _ in range(0, string2_len+1)]
+    dp = [[0] * (string2_len+1) for _ in range(0, string1_len+1)]
 
     for i in range(1, string1_len+1):
         dp[i][0] = i * DELTA
