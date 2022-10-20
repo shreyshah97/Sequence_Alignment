@@ -3,6 +3,7 @@ import sys
 import time
 import psutil
 
+dict = {"A":0, "C":1, "G":2, "T":3}
 def process_memory():
     process = psutil.Process()
     memory_info = process.memory_info()
@@ -81,7 +82,6 @@ def calculate_cost(generated_strings):
     string1, string2 = generated_strings
     string1_len = len(string1)
     string2_len = len(string2)
-    dict = {"A":0, "C":1, "G":2, "T":3}
     dp = [[0] * (string2_len+1) for _ in range(0, string1_len+1)]
 
     for i in range(1, string1_len+1):
@@ -107,7 +107,6 @@ def calculate_alignment(generated_strings, dp):
     string1, string2 = generated_strings
     i = len(string1)
     j = len(string2)
-    dict = {"A":0, "C":1, "G":2, "T":3}
     aligned_string_1 = ""
     aligned_string_2 = ""
     
@@ -142,7 +141,6 @@ def verify_cost(aligned_strings, dp):
     aligned_string_1, aligned_string_2 = aligned_strings
     aligned_string_len = len(aligned_string_1)
     cost=0
-    dict = {"A":0, "C":1, "G":2, "T":3}
 
     for i in range(aligned_string_len):
         if(aligned_string_1[i] == '_' or aligned_string_2[i] == '_'):
