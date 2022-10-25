@@ -1,13 +1,10 @@
 from ctypes import alignment
-import string
 import sys
 import time
-import os
 import psutil
 import json
 
 dict = {"A":0, "C":1, "G":2, "T":3}
-
 def process_memory():
     process = psutil.Process()
     memory_info = process.memory_info()
@@ -90,95 +87,68 @@ def initialize_variables():
     DELTA = 30
     ALPHA = [[0,110,48,94],[110,0,118,48],[48,118,0,110],[94,48,110,0]]
 
-def calculate_cost(string1, string2):
+def calculate_cost(generated_strings):
     """
     Calculates the minimum cost alignment for the sequences string1 and string2
     """
+    string1, string2 = generated_strings
     string1_len = len(string1)
     string2_len = len(string2)
-    dp = [[0] * (2) for _ in range(0, string1_len+1)]
+    dp = [[0] * (string2_len+1) for _ in range(0, string1_len+1)]
 
     for i in range(1, string1_len+1):
         dp[i][0] = i * DELTA
+    for i in range(1, string2_len+1):
+        dp[0][i] = i * DELTA
 
     #TODO: Check if i+1 instead of i makes more sense
-    for j in range(1, string2_len+1):
-        dp[0][1] = (j) * DELTA
-        for i in range(1, string1_len+1):
-           dp[i][1] = min(
-                dp[i-1][0] + ALPHA[dict[string1[i-1]]][dict[string2[j-1]]], 
-                DELTA + dp[i-1][1],
-                DELTA + dp[i][0])
-        for k in range(0, string1_len+1):
-            dp[k][0] = dp[k][1]
-
+    for i in range(1, string1_len+1):
+        for j in range(1, string2_len+1):
+            dp[i][j] = min(
+                dp[i-1][j-1] + ALPHA[dict[string1[i-1]]][dict[string2[j-1]]], 
+                DELTA + dp[i-1][j],
+                DELTA + dp[i][j-1])
     return dp
 
-def calculate_optimal_cut(string1, string2):
-    """
-    Calculates the optimal cut for Y when X is divided into 2 halves
-    """
-    string1_len = len(string1)
-    string1_left = string1[:int(string1_len/2)]
-    string1_right = string1[int(string1_len/2):]
-    dp_left = calculate_cost(string2, string1_left)
-    dp_right = calculate_cost(string2[::-1], string1_right[::-1])
-    dp_left_len = len(dp_left)
-    min = sys.maxsize
-    min_index = 0
-
-    for i in range(dp_left_len):
-        if(dp_left[i][1] + dp_right[dp_left_len-i-1][1]<min):
-            min = dp_left[i][1] + dp_right[dp_left_len-i-1][1]
-            min_index = i
-
-    return min_index
-
-def calculate_alignment(string1, string2):
+def calculate_alignment(generated_strings, dp):
     """
     Returns the aligned string for string1 and string2
     """
-    string1_len = len(string1)
-    string2_len = len(string2)
+    string1, string2 = generated_strings
+    i = len(string1)
+    j = len(string2)
     aligned_string_1 = ""
     aligned_string_2 = ""
-    if string1_len == 1:
-        if string2_len == 0:
-            aligned_string_1 = string1[0]
-            aligned_string_2 = '_'
-        elif string2_len == 1:
-            if ALPHA[dict[string1[0]]][dict[string2[0]]] < (2 * DELTA):
-                aligned_string_1 = string1[0]
-                aligned_string_2 = string2[0]
-            else:
-                aligned_string_1 = '_'+string1[0]
-                aligned_string_2 = string2[0]+'_'
-        else:
-            s_unique = set(string2)
-            min_cost = min(ALPHA[dict[char]][dict[string1[0]]] for char in s_unique)
-
-            if 2 * DELTA <= min_cost:
-                aligned_string_1 = "_" * (len(string2)) + string1
-                aligned_string_2 = string2 + "_"
-                
-            else:
-                char_idx = [i for i, cost in enumerate(ALPHA[dict[string1]]) if cost == min_cost]
-                matched_char = None
-                for char, i in dict.items():
-                    if i == char_idx[0]:
-                        matched_char = char
-                idx = string2.find(str(matched_char))    
-                aligned_string_1 = '_' * (idx) + string1 + '_' * (len(string2)-idx-1)
-                aligned_string_2 = string2         
-        return aligned_string_1, aligned_string_2
     
-    index = calculate_optimal_cut(string1, string2)
-    aligned_string_left_1, aligned_string_left_2 = calculate_alignment(string1[:int(string1_len/2)], string2[:index])
-    aligned_string_right_1, aligned_string_right_2 = calculate_alignment(string1[int(string1_len/2):], string2[index:])
-    aligned_string_1, aligned_string_2 = aligned_string_left_1 + aligned_string_right_1, aligned_string_left_2 + aligned_string_right_2
-    return aligned_string_1, aligned_string_2
+    while i!=0 and j!=0:
+        if(dp[i][j] == dp[i-1][j-1] + ALPHA[dict[string1[i-1]]][dict[string2[j-1]]]):
+            aligned_string_1 = string1[i-1] + aligned_string_1
+            aligned_string_2 = string2[j-1] + aligned_string_2
+            i-=1
+            j-=1
+        elif(dp[i][j] == DELTA + dp[i][j-1]):
+            aligned_string_1 = "_" + aligned_string_1
+            aligned_string_2 = string2[j-1] + aligned_string_2
+            j-=1
+        else:
+            aligned_string_1 = string1[i-1] + aligned_string_1
+            aligned_string_2 = "_" + aligned_string_2
+            i-=1
+    
+    while i!=0:
+        aligned_string_1 = string1[i-1] + aligned_string_1
+        aligned_string_2 = "_" + aligned_string_2
+        i-=1
+    
+    while j!=0:
+        aligned_string_1 = "_" + aligned_string_1
+        aligned_string_2 = string2[j-1] + aligned_string_2
+        j-=1
 
-def verify_cost(aligned_string_1, aligned_string_2):
+    return [aligned_string_1, aligned_string_2]
+
+def verify_cost(aligned_strings, dp):
+    aligned_string_1, aligned_string_2 = aligned_strings
     aligned_string_len = len(aligned_string_1)
     cost=0
 
@@ -188,8 +158,11 @@ def verify_cost(aligned_string_1, aligned_string_2):
         else:
             cost += ALPHA[dict[aligned_string_1[i]]][dict[aligned_string_2[i]]]
     
-    print(cost)
+    if dp[-1][-1] != cost:
+        print("Minimum cost calculated does not match with the aligned sequence costs")
+        return -1
     return cost
+
 
 def driver():
     input_file_path = sys.argv[1]
@@ -200,11 +173,10 @@ def driver():
     lines = read_file(input_file_path)
     generated_strings, base_lengths, operation_counts = generate_strings(lines)
     validate_strings(generated_strings, base_lengths, operation_counts)
-    print(generated_strings[0]+"\n"+generated_strings[1])
-    aligned_string_1, aligned_string_2 = calculate_alignment(generated_strings[0], generated_strings[1])
-    verify_cost(aligned_string_1, aligned_string_2)
-    print(aligned_string_1+"\n"+aligned_string_2)
-    return (output_metric_file_path, 'efficient', input_file_count)
+    dp = calculate_cost(generated_strings)
+    aligned_strings = calculate_alignment(generated_strings, dp)
+    verify_cost(aligned_strings, dp)
+    return (output_metric_file_path, 'basic', input_file_count)
 
 def main():
     time_wrapper(driver)
