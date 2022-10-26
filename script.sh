@@ -4,7 +4,7 @@ inputCount=$1
 efficientFile="./efficient_3.py"
 basicFile="./basic_3.py"
 
-python3 "clear_metrics.py" $1
+python3 "./clear_metrics.py" "metrics.json"
 
 for (( c=1; c<=inputCount; c++ ))
 do 
