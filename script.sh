@@ -15,5 +15,5 @@ do
     python3 "$efficientFile" "$inputFileName" "$outputEfficientFileName"
 done
 
-python3 "plot_time.py" $1 "metrics.json"
-python3 "plot_memory.py" $1 "metrics.json"
+python3 "plot_time.py" "metrics.json"
+python3 "plot_memory.py" "metrics.json"

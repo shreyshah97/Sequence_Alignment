@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import json
 import sys
 
-input_count = int(sys.argv[1])
 file_name = sys.argv[2]
 
 with open(file_name, 'r') as f:
