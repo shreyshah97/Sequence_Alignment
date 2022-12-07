@@ -1,10 +1,7 @@
-from ctypes import alignment
-import string
+import json
+import psutil
 import sys
 import time
-import os
-import psutil
-import json
 
 dict = {"A":0, "C":1, "G":2, "T":3}
 
@@ -14,25 +11,29 @@ def process_memory():
     memory_consumed = int(memory_info.rss/1024)
     return memory_consumed
 
-def updateMetrics(file_name, memory_consumed, time_taken, algorithm_used, input_count):
+def updateMetrics(file_name, memory_consumed, time_taken, algorithm_used, input_size):
     metric_data = {}
     with open(file_name, 'r') as f:
         metric_data = json.loads(f.read())
         f.close()
-    metric_data[algorithm_used]['memory_consumed'].insert(input_count-1,  memory_consumed)
-    metric_data[algorithm_used]['time_taken'].insert(input_count-1,  time_taken)
+    metric_data[algorithm_used]['memory_consumed'].append(memory_consumed)
+    metric_data[algorithm_used]['time_taken'].append(time_taken)
+
     json_object = json.dumps(metric_data, indent=4)
     with open(file_name, 'w') as f:
         f.write(json_object)
         f.close()
 
-def time_wrapper(driver_func):
-    start_time = time.time()
-    data = driver_func()
-    end_time = time.time()
-    time_taken = (end_time - start_time)*1000
+def time_wrapper(driver_func, input_file_path, output_file_path):  
+    start_time = time.time()    
+    data = driver_func(input_file_path, output_file_path)    
+    end_time = time.time()  
+    time_taken = (end_time - start_time)*1000   
     memory_consumed= process_memory()
-    updateMetrics(data[0], memory_consumed, time_taken, data[1], data[2])
+    updateMetrics(data[0], memory_consumed, time_taken, data[1], data[2])	
+    # print(memory_consumed)
+    # print(time_taken)
+    write_file(output_file_path, memory_consumed=memory_consumed, time_taken=time_taken)
     return time_taken
 
 def read_file(input_file):
@@ -44,11 +45,23 @@ def read_file(input_file):
         f.close()
     return lines
     
-    
+def write_file(output_file_path, alignment_cost=None, aligned_strings=None, memory_consumed=None, time_taken=None):
+    with open(output_file_path, "a") as f:
+        if alignment_cost is not None: 
+            f.write(str(alignment_cost)+'\n')
+        if aligned_strings is not None:
+            f.write(aligned_strings[0]+'\n')
+            f.write(aligned_strings[1]+'\n')
+        if time_taken is not None:
+            f.write(str(time_taken)+'\n')
+        if memory_consumed is not None:
+            f.write(str(memory_consumed))
+
 def generate_strings(lines):
     """
     Generates and returns the strings generated from the input file.
     """
+    base = ''
     operation_counts = []
     base_lengths = []
     generated_strings = []
@@ -101,7 +114,6 @@ def calculate_cost(string1, string2):
     for i in range(1, string1_len+1):
         dp[i][0] = i * DELTA
 
-    #TODO: Check if i+1 instead of i makes more sense
     for j in range(1, string2_len+1):
         dp[0][1] = (j) * DELTA
         for i in range(1, string1_len+1):
@@ -178,7 +190,7 @@ def calculate_alignment(string1, string2):
     aligned_string_1, aligned_string_2 = aligned_string_left_1 + aligned_string_right_1, aligned_string_left_2 + aligned_string_right_2
     return aligned_string_1, aligned_string_2
 
-def verify_cost(aligned_string_1, aligned_string_2):
+def calculate_alignment_cost(aligned_string_1, aligned_string_2):
     aligned_string_len = len(aligned_string_1)
     cost=0
 
@@ -188,26 +200,28 @@ def verify_cost(aligned_string_1, aligned_string_2):
         else:
             cost += ALPHA[dict[aligned_string_1[i]]][dict[aligned_string_2[i]]]
     
-    print(cost)
+    # print(cost)
     return cost
 
-def driver():
-    input_file_path = sys.argv[1]
-    input_file_count = int(sys.argv[2]) 
-    output_file_path = sys.argv[3]
-    output_metric_file_path = sys.argv[4]
+    
+def driver(input_file_path, output_file_path):
+    output_metric_file_path = "metrics.json"
     initialize_variables()
     lines = read_file(input_file_path)
     generated_strings, base_lengths, operation_counts = generate_strings(lines)
-    validate_strings(generated_strings, base_lengths, operation_counts)
-    print(generated_strings[0]+"\n"+generated_strings[1])
+    # validate_strings(generated_strings, base_lengths, operation_counts)
+    # print(generated_strings[0]+"\n"+generated_strings[1])
     aligned_string_1, aligned_string_2 = calculate_alignment(generated_strings[0], generated_strings[1])
-    verify_cost(aligned_string_1, aligned_string_2)
-    print(aligned_string_1+"\n"+aligned_string_2)
-    return (output_metric_file_path, 'efficient', input_file_count)
+    input_size = base_lengths[0] + base_lengths[1]
+    cost = calculate_alignment_cost(aligned_string_1, aligned_string_2)
+    # print(aligned_string_1+"\n"+aligned_string_2)
+    write_file(output_file_path, alignment_cost=cost, aligned_strings=[aligned_string_1, aligned_string_2])
+    return (output_metric_file_path, 'efficient', input_size)
 
 def main():
-    time_wrapper(driver)
+    input_file_path = sys.argv[1]
+    output_file_path = sys.argv[2]
+    time_wrapper(driver, input_file_path, output_file_path)
 
 if __name__ == "__main__":
     main()
