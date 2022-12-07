@@ -2,7 +2,9 @@ from ctypes import alignment
 import string
 import sys
 import time
+import os
 import psutil
+import json
 
 dict = {"A":0, "C":1, "G":2, "T":3}
 
@@ -10,16 +12,27 @@ def process_memory():
     process = psutil.Process()
     memory_info = process.memory_info()
     memory_consumed = int(memory_info.rss/1024)
-    print(memory_consumed)
     return memory_consumed
+
+def updateMetrics(file_name, memory_consumed, time_taken, algorithm_used, input_count):
+    metric_data = {}
+    with open(file_name, 'r') as f:
+        metric_data = json.loads(f.read())
+        f.close()
+    metric_data[algorithm_used]['memory_consumed'].insert(input_count-1,  memory_consumed)
+    metric_data[algorithm_used]['time_taken'].insert(input_count-1,  time_taken)
+    json_object = json.dumps(metric_data, indent=4)
+    with open(file_name, 'w') as f:
+        f.write(json_object)
+        f.close()
 
 def time_wrapper(driver_func):
     start_time = time.time()
-    driver_func()
+    data = driver_func()
     end_time = time.time()
     time_taken = (end_time - start_time)*1000
-    print(time_taken)
-    process_memory()
+    memory_consumed= process_memory()
+    updateMetrics(data[0], memory_consumed, time_taken, data[1], data[2])
     return time_taken
 
 def read_file(input_file):
@@ -179,8 +192,10 @@ def verify_cost(aligned_string_1, aligned_string_2):
     return cost
 
 def driver():
-    input_file_path = sys.argv[1] 
-    output_file_path = sys.argv[2]
+    input_file_path = sys.argv[1]
+    input_file_count = int(sys.argv[2]) 
+    output_file_path = sys.argv[3]
+    output_metric_file_path = sys.argv[4]
     initialize_variables()
     lines = read_file(input_file_path)
     generated_strings, base_lengths, operation_counts = generate_strings(lines)
@@ -189,7 +204,7 @@ def driver():
     aligned_string_1, aligned_string_2 = calculate_alignment(generated_strings[0], generated_strings[1])
     verify_cost(aligned_string_1, aligned_string_2)
     print(aligned_string_1+"\n"+aligned_string_2)
-    return
+    return (output_metric_file_path, 'efficient', input_file_count)
 
 def main():
     time_wrapper(driver)
