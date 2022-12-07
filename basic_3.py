@@ -4,20 +4,31 @@ import time
 import psutil
 
 dict = {"A":0, "C":1, "G":2, "T":3}
-def process_memory():
+def process_memory(outputs):
     process = psutil.Process()
     memory_info = process.memory_info()
     memory_consumed = int(memory_info.rss/1024)
     print(memory_consumed)
+    outputs.append(memory_consumed)
     return memory_consumed
 
+def save_output(outputs, output_file_path):
+    with open(output_file_path, 'w') as f:
+        for output in outputs:
+            f.write(str(output) + "\n")
+        f.close()
+
 def time_wrapper(driver_func):
+    output_file_path = sys.argv[2]
+    outputs = []
     start_time = time.time()
-    driver_func()
+    driver_func(outputs)
     end_time = time.time()
     time_taken = (end_time - start_time)*1000
     print(time_taken)
-    process_memory()
+    outputs.append(time_taken)
+    process_memory(outputs)
+    save_output(outputs, output_file_path)
     return time_taken
 
 def read_file(input_file):
@@ -154,17 +165,19 @@ def verify_cost(aligned_strings, dp):
     return cost
 
 
-def driver():
+def driver(output):
     input_file_path = sys.argv[1] 
-    output_file_path = sys.argv[2]
     initialize_variables()
     lines = read_file(input_file_path)
     generated_strings, base_lengths, operation_counts = generate_strings(lines)
     validate_strings(generated_strings, base_lengths, operation_counts)
     print(generated_strings[0]+"\n"+generated_strings[1])
     dp = calculate_cost(generated_strings)
+    output.append(dp[len(generated_strings[0])][len(generated_strings[1])])
     aligned_strings = calculate_alignment(generated_strings, dp)
     print(aligned_strings[0]+"\n"+aligned_strings[1])
+    output.append(aligned_strings[0])
+    output.append(aligned_strings[1])
     verify_cost(aligned_strings, dp)
     return
 
