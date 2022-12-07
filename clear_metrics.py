@@ -12,7 +12,8 @@ with open(file_name, 'w') as f:
         "efficient": {
             "time_taken": [],
             "memory_consumed": []
-        }
+        },
+        "input_size": []
     }
     f.write(json.dumps(dict, indent=4))
     f.close()

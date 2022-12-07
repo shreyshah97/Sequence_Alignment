@@ -14,13 +14,14 @@ def process_memory():
     memory_consumed = int(memory_info.rss/1024)
     return memory_consumed
 
-def updateMetrics(file_name, memory_consumed, time_taken, algorithm_used, input_count):
+def updateMetrics(file_name, memory_consumed, time_taken, algorithm_used, input_size):
     metric_data = {}
     with open(file_name, 'r') as f:
         metric_data = json.loads(f.read())
         f.close()
-    metric_data[algorithm_used]['memory_consumed'].insert(input_count-1,  memory_consumed)
-    metric_data[algorithm_used]['time_taken'].insert(input_count-1,  time_taken)
+    metric_data[algorithm_used]['memory_consumed'].append(memory_consumed)
+    metric_data[algorithm_used]['time_taken'].append(time_taken)
+
     json_object = json.dumps(metric_data, indent=4)
     with open(file_name, 'w') as f:
         f.write(json_object)
@@ -193,9 +194,8 @@ def verify_cost(aligned_string_1, aligned_string_2):
 
 def driver():
     input_file_path = sys.argv[1]
-    input_file_count = int(sys.argv[2]) 
-    output_file_path = sys.argv[3]
-    output_metric_file_path = sys.argv[4]
+    output_file_path = sys.argv[2]
+    output_metric_file_path = "metrics.json"
     initialize_variables()
     lines = read_file(input_file_path)
     generated_strings, base_lengths, operation_counts = generate_strings(lines)
@@ -204,7 +204,8 @@ def driver():
     aligned_string_1, aligned_string_2 = calculate_alignment(generated_strings[0], generated_strings[1])
     verify_cost(aligned_string_1, aligned_string_2)
     print(aligned_string_1+"\n"+aligned_string_2)
-    return (output_metric_file_path, 'efficient', input_file_count)
+    input_size = base_lengths[0] + base_lengths[1]
+    return (output_metric_file_path, 'efficient', input_size)
 
 def main():
     time_wrapper(driver)
