@@ -30,6 +30,7 @@ def time_wrapper(driver_func, input_file_path, output_file_path):
     end_time = time.time()  
     time_taken = (end_time - start_time)*1000   
     memory_consumed= process_memory()
+    updateMetrics(data[0], memory_consumed, time_taken, data[1], data[2])	
     # print(memory_consumed)
     # print(time_taken)
     write_file(output_file_path, memory_consumed=memory_consumed, time_taken=time_taken)
