@@ -3,7 +3,6 @@ import sys
 import time
 import psutil
 
-dict = {"A":0, "C":1, "G":2, "T":3}
 def process_memory(outputs):
     process = psutil.Process()
     memory_info = process.memory_info()
@@ -49,23 +48,24 @@ def generate_strings(lines):
     base_lengths = []
     generated_strings = []
     count=0
+    base_str = None
+    # add extra line to denote eof
+    lines.append('e')
 
     for line in lines:
         line = line.strip()
-        if(not line.isnumeric()):
-            if count != 0:
-                generated_strings.append(base)
+        if(line.isalpha()):
+            if base_str is not None:
+                generated_strings.append(base_str)
                 operation_counts.append(count)
                 count = 0
-            base = line
+            base_str = line
             base_lengths.append(len(line))
         else:
             count += 1
             insert_at = int(line) + 1
-            base = base[:insert_at] + base + base[insert_at:]
+            base_str = base_str[:insert_at] + base_str + base_str[insert_at:]
             
-    generated_strings.append(base)
-    operation_counts.append(count)
     return generated_strings, base_lengths, operation_counts
 
 def validate_strings(generated_strings, base_lengths, operation_counts):
@@ -75,16 +75,17 @@ def validate_strings(generated_strings, base_lengths, operation_counts):
     inputs = list(zip(generated_strings, base_lengths, operation_counts))
     for input in inputs:
         if(len(input[0]) != (input[1] * int(2 ** input[2]))):
-            print("Length of generated string is not 2^j")
-            return -1
+            raise RuntimeError(f"Generated string is not of optimal length\nnew string: {input[0]}\nnew string length: {len(input[0])}, expected length:{(input[1] * int(2 ** input[2]))}\nbase string length: {input[1]}, operation count: {input[2]}")
+    return True
 
 def initialize_variables():
     """
     Initializes the values of variables like delta and alpha
     """
-    global DELTA, ALPHA
+    global DELTA, ALPHA, dict
     DELTA = 30
     ALPHA = [[0,110,48,94],[110,0,118,48],[48,118,0,110],[94,48,110,0]]
+    dict = {"A":0, "C":1, "G":2, "T":3}
 
 def calculate_cost(generated_strings):
     """
@@ -100,7 +101,6 @@ def calculate_cost(generated_strings):
     for i in range(1, string2_len+1):
         dp[0][i] = i * DELTA
 
-    #TODO: Check if i+1 instead of i makes more sense
     for i in range(1, string1_len+1):
         for j in range(1, string2_len+1):
             dp[i][j] = min(
@@ -108,6 +108,8 @@ def calculate_cost(generated_strings):
                 DELTA + dp[i-1][j],
                 DELTA + dp[i][j-1])
 
+    # for i in range(0, string1_len+1):
+    #     print(dp[i])
     print(dp[string1_len][string2_len])
     return dp
 
@@ -125,26 +127,26 @@ def calculate_alignment(generated_strings, dp):
         if(dp[i][j] == dp[i-1][j-1] + ALPHA[dict[string1[i-1]]][dict[string2[j-1]]]):
             aligned_string_1 = string1[i-1] + aligned_string_1
             aligned_string_2 = string2[j-1] + aligned_string_2
-            i-=1
-            j-=1
+            i -= 1
+            j -= 1
         elif(dp[i][j] == DELTA + dp[i][j-1]):
             aligned_string_1 = "_" + aligned_string_1
             aligned_string_2 = string2[j-1] + aligned_string_2
-            j-=1
+            j -= 1
         else:
             aligned_string_1 = string1[i-1] + aligned_string_1
             aligned_string_2 = "_" + aligned_string_2
-            i-=1
+            i -= 1
     
-    while i!=0:
+    while i != 0:
         aligned_string_1 = string1[i-1] + aligned_string_1
         aligned_string_2 = "_" + aligned_string_2
-        i-=1
+        i -= 1
     
-    while j!=0:
+    while j != 0:
         aligned_string_1 = "_" + aligned_string_1
         aligned_string_2 = string2[j-1] + aligned_string_2
-        j-=1
+        j -= 1
 
     return [aligned_string_1, aligned_string_2]
 
@@ -160,8 +162,7 @@ def verify_cost(aligned_strings, dp):
             cost += ALPHA[dict[aligned_string_1[i]]][dict[aligned_string_2[i]]]
     
     if dp[-1][-1] != cost:
-        print("Minimum cost calculated does not match with the aligned sequence costs")
-        return -1
+        raise RuntimeError("Minimum cost calculated does not match with the aligned sequence costs")
     return cost
 
 
@@ -173,7 +174,7 @@ def driver(output):
     validate_strings(generated_strings, base_lengths, operation_counts)
     print(generated_strings[0]+"\n"+generated_strings[1])
     dp = calculate_cost(generated_strings)
-    output.append(dp[len(generated_strings[0])][len(generated_strings[1])])
+    output.append(dp[-1][-1])
     aligned_strings = calculate_alignment(generated_strings, dp)
     print(aligned_strings[0]+"\n"+aligned_strings[1])
     output.append(aligned_strings[0])
