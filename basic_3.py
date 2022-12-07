@@ -126,7 +126,7 @@ def calculate_cost(generated_strings):
 
     # for i in range(0, string1_len+1):
     #     print(dp[i])
-    print(dp[string1_len][string2_len])
+    # print(dp[string1_len][string2_len])
     return dp
 
 def calculate_alignment(generated_strings, dp):
@@ -190,7 +190,6 @@ def driver(input_file_path, output_file_path):
     # validate_strings(generated_strings, base_lengths, operation_counts)
     # print(generated_strings[0]+"\n"+generated_strings[1])
     dp = calculate_cost(generated_strings)
-    output.append(dp[-1][-1])
     aligned_strings = calculate_alignment(generated_strings, dp)
     input_size = len(generated_strings[0]) + len(generated_strings[1])
     # print(aligned_strings[0]+"\n"+aligned_strings[1])
