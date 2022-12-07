@@ -1,15 +1,14 @@
-from ctypes import alignment
+import json
+import psutil
 import sys
 import time
-import psutil
-import json
 
 dict = {"A":0, "C":1, "G":2, "T":3}
+
 def process_memory():
     process = psutil.Process()
     memory_info = process.memory_info()
     memory_consumed = int(memory_info.rss/1024)
-    print(memory_consumed)
     return memory_consumed
 
 def updateMetrics(file_name, memory_consumed, time_taken, algorithm_used, input_size):	
@@ -24,14 +23,17 @@ def updateMetrics(file_name, memory_consumed, time_taken, algorithm_used, input_
     with open(file_name, 'w') as f:	
         f.write(json_object)	
         f.close()
-
-def time_wrapper(driver_func):	
-    start_time = time.time()	
-    data = driver_func()	
-    end_time = time.time()	
-    time_taken = (end_time - start_time)*1000	
-    memory_consumed = process_memory()	
+    
+def time_wrapper(driver_func, input_file_path, output_file_path):  
+    start_time = time.time()    
+    data = driver_func(input_file_path, output_file_path)    
+    end_time = time.time()  
+    time_taken = (end_time - start_time)*1000   
+    memory_consumed= process_memory()
     updateMetrics(data[0], memory_consumed, time_taken, data[1], data[2])	
+    # print(memory_consumed)
+    # print(time_taken)
+    write_file(output_file_path, memory_consumed=memory_consumed, time_taken=time_taken)
     return time_taken
 
 def read_file(input_file):
@@ -43,11 +45,23 @@ def read_file(input_file):
         f.close()
     return lines
     
-    
+def write_file(output_file_path, alignment_cost=None, aligned_strings=None, memory_consumed=None, time_taken=None):
+    with open(output_file_path, "a") as f:
+        if alignment_cost is not None: 
+            f.write(str(alignment_cost)+'\n')
+        if aligned_strings is not None:
+            f.write(aligned_strings[0]+'\n')
+            f.write(aligned_strings[1]+'\n')
+        if time_taken is not None:
+            f.write(str(time_taken)+'\n')
+        if memory_consumed is not None:
+            f.write(str(memory_consumed))
+
 def generate_strings(lines):
     """
     Generates and returns the strings generated from the input file.
     """
+    base = ''
     operation_counts = []
     base_lengths = []
     generated_strings = []
@@ -103,7 +117,6 @@ def calculate_cost(generated_strings):
     for i in range(1, string2_len+1):
         dp[0][i] = i * DELTA
 
-    #TODO: Check if i+1 instead of i makes more sense
     for i in range(1, string1_len+1):
         for j in range(1, string2_len+1):
             dp[i][j] = min(
@@ -111,7 +124,7 @@ def calculate_cost(generated_strings):
                 DELTA + dp[i-1][j],
                 DELTA + dp[i][j-1])
 
-    print(dp[string1_len][string2_len])
+    # print(dp[string1_len][string2_len])
     return dp
 
 def calculate_alignment(generated_strings, dp):
@@ -167,26 +180,26 @@ def verify_cost(aligned_strings, dp):
         return -1
     return cost
 
-
-def driver():
-    input_file_path = sys.argv[1]	
-    output_file_path = sys.argv[2]	
+    
+def driver(input_file_path, output_file_path):
     output_metric_file_path = "metrics.json"
     initialize_variables()
     lines = read_file(input_file_path)
     generated_strings, base_lengths, operation_counts = generate_strings(lines)
-    validate_strings(generated_strings, base_lengths, operation_counts)
-    print(generated_strings[0]+"\n"+generated_strings[1])
+    # validate_strings(generated_strings, base_lengths, operation_counts)
+    # print(generated_strings[0]+"\n"+generated_strings[1])
     dp = calculate_cost(generated_strings)
     aligned_strings = calculate_alignment(generated_strings, dp)
-    print(aligned_strings[0]+"\n"+aligned_strings[1])
-    verify_cost(aligned_strings, dp)
     input_size = len(generated_strings[0]) + len(generated_strings[1])
+    # print(aligned_strings[0]+"\n"+aligned_strings[1])
+    # verify_cost(aligned_strings, dp)
+    write_file(output_file_path, alignment_cost=dp[-1][-1], aligned_strings=aligned_strings)
     return (output_metric_file_path, 'basic', input_size)	
 
-
 def main():
-    time_wrapper(driver)
+    input_file_path = sys.argv[1]       
+    output_file_path = sys.argv[2]
+    time_wrapper(driver, input_file_path, output_file_path)
 
 if __name__ == "__main__":
     main()
