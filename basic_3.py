@@ -27,11 +27,11 @@ def time_wrapper(driver_func, input_file_path, output_file_path):
     data = driver_func(input_file_path, output_file_path)    
     end_time = time.time()  
     time_taken = (end_time - start_time)*1000   
-    memory_consumed= process_memory()
+    memory_consumed = process_memory()
     updateMetrics(data[0], memory_consumed, time_taken, data[1], data[2])	
     # print(memory_consumed)
     # print(time_taken)
-    write_file(output_file_path, memory_consumed=memory_consumed, time_taken=time_taken)
+    write_file(output_file_path, "a", memory_consumed=memory_consumed, time_taken=time_taken)
     return time_taken
 
 def read_file(input_file):
@@ -43,8 +43,8 @@ def read_file(input_file):
         f.close()
     return lines
     
-def write_file(output_file_path, alignment_cost=None, aligned_strings=None, memory_consumed=None, time_taken=None):
-    with open(output_file_path, "a") as f:
+def write_file(output_file_path, mode, alignment_cost=None, aligned_strings=None, memory_consumed=None, time_taken=None):
+    with open(output_file_path, mode) as f:
         if alignment_cost is not None: 
             f.write(str(alignment_cost)+'\n')
         if aligned_strings is not None:
@@ -59,7 +59,6 @@ def generate_strings(lines):
     """
     Generates and returns the strings generated from the input file.
     """
-    base = ''
     operation_counts = []
     base_lengths = []
     generated_strings = []
@@ -187,6 +186,7 @@ def driver(input_file_path, output_file_path):
     initialize_variables()
     lines = read_file(input_file_path)
     generated_strings, base_lengths, operation_counts = generate_strings(lines)
+    # print(len(generated_strings[0]), len(generated_strings[1]))
     # validate_strings(generated_strings, base_lengths, operation_counts)
     # print(generated_strings[0]+"\n"+generated_strings[1])
     dp = calculate_cost(generated_strings)
@@ -194,7 +194,7 @@ def driver(input_file_path, output_file_path):
     input_size = len(generated_strings[0]) + len(generated_strings[1])
     # print(aligned_strings[0]+"\n"+aligned_strings[1])
     # verify_cost(aligned_strings, dp)
-    write_file(output_file_path, alignment_cost=dp[-1][-1], aligned_strings=aligned_strings)
+    write_file(output_file_path, "w", alignment_cost=dp[-1][-1], aligned_strings=aligned_strings)
     return (output_metric_file_path, 'basic', input_size)	
 
 def main():
