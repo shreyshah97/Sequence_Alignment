@@ -209,6 +209,7 @@ def driver(input_file_path, output_file_path):
     initialize_variables()
     lines = read_file(input_file_path)
     generated_strings, base_lengths, operation_counts = generate_strings(lines)
+    # print(len(generated_strings[0]), len(generated_strings[1]))
     # validate_strings(generated_strings, base_lengths, operation_counts)
     # print(generated_strings[0]+"\n"+generated_strings[1])
     aligned_string_1, aligned_string_2 = calculate_alignment(generated_strings[0], generated_strings[1])
