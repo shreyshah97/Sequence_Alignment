@@ -14,3 +14,9 @@ Summary.docx contains the information about time taken to run strings of differe
 1. We run the `script.sh` with an argument suggesting the number of test cases to run from the given datapoints.
 2. It will create a `metrics.json` file containing the space and time taken by each approach for various length strings.
 3. Based on the `metrics.json` file we internally call the `plot_time.py` and `plot_memory.py` which will generate plots for the time and memory consumed by these approaches.
+
+## Memory plot of basic vs efficient Method
+![Memory Plot](https://github.com/shreyshah97/Sequence_Alignment/blob/main/Memory%20Plot.png)
+
+## Time plot of basic vs efficient Method
+![Time Plot](https://github.com/shreyshah97/Sequence_Alignment/blob/main/Time%20Plot.png)
