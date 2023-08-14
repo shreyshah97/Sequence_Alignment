@@ -1,5 +1,0 @@
-Repository created for the Sequence Alignment Problem for the course CS570 at USC - Analysis of Algorithms.
-
-run command
-python .\basic_3.py ".\Project_Details\SampleTestCases\input1.txt" o1.txt
-
